@@ -243,12 +243,12 @@ install_caddy_tls() {
     wget --no-check-certificate -O ${CADDY_DATA}html.tar.gz ${STATIC_HTML} &&
       tar -zxvf ${CADDY_DATA}html.tar.gz -C ${CADDY_SRV}
 
-    read -r -p "请输入Caddy的转发端口(用于申请证书,默认:8863): " caddy_remote_port
+    read -r -p "Please enter Caddy's forwarding port (used to apply for a certificate, default:8863): " caddy_remote_port
     [[ -z "${caddy_remote_port}" ]] && caddy_remote_port=8863
 
-    while read -r -p "请输入你的域名(必填): " domain; do
+    while read -r -p "Please enter your domain name (required): " domain; do
       if [[ -z "${domain}" ]]; then
-        echo_content red "域名不能为空"
+        echo_content red "Domain name cannot be empty"
       else
         break
       fi
@@ -256,19 +256,19 @@ install_caddy_tls() {
 
     mkdir "${CADDY_ACME}${domain}"
 
-    while read -r -p "请选择设置证书的方式?(1/自动申请和续签证书 2/手动设置证书路径 默认:1/自动申请和续签证书): " ssl_option; do
+    while read -r -p "Please choose the way to set up the certificate? (1/automatically apply for and renew the certificate 2/manually set the certificate path default: 1/automatically apply for and renew the certificate): " ssl_option; do
       if [[ -z ${ssl_option} || ${ssl_option} == 1 ]]; then
 
-        echo_content yellow "正在检测域名,请稍后..."
+        echo_content yellow "Detecting domain name, please wait..."
         ping_ip=$(ping "${domain}" -s1 -c1 | grep "ttl=" | head -n1 | cut -d"(" -f2 | cut -d")" -f1)
         curl_ip=$(curl ifconfig.me)
         if [[ "${ping_ip}" != "${curl_ip}" ]]; then
-          echo_content yellow "你的域名没有解析到本机IP,请稍后再试"
-          echo_content red "---> Caddy安装失败"
+          echo_content yellow "Your domain name is not resolved to the local IP, please try again later"
+          echo_content red "---> Caddy installation failed"
           exit 0
         fi
 
-        read -r -p "请输入你的邮箱(用于申请证书,默认:123456@qq.com): " your_email
+        read -r -p "Please enter your email address (used to apply for a certificate, default:123456@qq.com): " your_email
         [[ -z "${your_email}" ]] && your_email="123456@qq.com"
 
         cat >${CADDY_Caddyfile} <<EOF
@@ -284,15 +284,15 @@ EOF
         break
       else
         if [[ ${ssl_option} != 2 ]]; then
-          echo_content red "不可以输入除1和2之外的其他字符"
+          echo_content red "Cannot enter other characters except 1 and 2"
         else
 
-          while read -r -p "请输入证书的.crt文件路径(必填): " crt_path; do
+          while read -r -p "Please enter the .crt file path of the certificate (required): " crt_path; do
             if [[ -z "${crt_path}" ]]; then
-              echo_content red "路径不能为空"
+              echo_content red "path cannot be empty"
             else
               if [[ ! -f "${crt_path}" ]]; then
-                echo_content red "证书的.crt文件路径不存在"
+                echo_content red "The .crt file path for the certificate does not exist"
               else
                 cp "${crt_path}" "${CADDY_ACME}${domain}/${domain}.crt"
                 break
@@ -300,12 +300,12 @@ EOF
             fi
           done
 
-          while read -r -p "请输入证书的.key文件路径(必填): " key_path; do
+          while read -r -p "Please enter the .key file path of the certificate (required): " key_path; do
             if [[ -z "${key_path}" ]]; then
-              echo_content red "路径不能为空"
+              echo_content red "path cannot be empty"
             else
               if [[ ! -f "${key_path}" ]]; then
-                echo_content red "证书的.key文件路径不存在"
+                echo_content red "The .key file path of the certificate does not exist"
               else
                 cp "${key_path}" "${CADDY_ACME}${domain}/${domain}.key"
                 break
@@ -344,29 +344,29 @@ EOF
       cat >${DOMAIN_FILE} <<EOF
 ${domain}
 EOF
-      echo_content skyBlue "---> Caddy安装完成"
+      echo_content skyBlue "---> Caddy installation complete"
     else
-      echo_content red "---> Caddy安装失败或运行异常,请尝试修复或卸载重装"
+      echo_content red "---> Caddy installation fails or runs abnormally, please try to repair or uninstall and reinstall"
       exit 0
     fi
   else
     domain=$(cat "${DOMAIN_FILE}")
-    echo_content skyBlue "---> 你已经安装了Caddy"
+    echo_content skyBlue "---> You have installed Caddy"
   fi
 }
 
 # 安装MariaDB
 install_mariadb() {
   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-mariadb$") ]]; then
-    echo_content green "---> 安装MariaDB"
+    echo_content green "---> Install MariaDB"
 
-    read -r -p "请输入数据库的端口(默认:9507): " mariadb_port
+    read -r -p "Please enter the port of the database (default: 9507): " mariadb_port
     [[ -z "${mariadb_port}" ]] && mariadb_port=9507
-    read -r -p "请输入数据库的用户名(默认:root): " mariadb_user
+    read -r -p "Please enter the username of the database (default: root): " mariadb_user
     [[ -z "${mariadb_user}" ]] && mariadb_user="root"
-    while read -r -p "请输入数据库的密码(必填): " mariadb_pas; do
+    while read -r -p "Please enter the database password (required): " mariadb_pas; do
       if [[ -z "${mariadb_pas}" ]]; then
-        echo_content red "密码不能为空"
+        echo_content red "password can not be blank"
       else
         break
       fi
@@ -395,30 +395,30 @@ install_mariadb() {
     fi
 
     if [[ -n $(docker ps -q -f "name=^trojan-panel-mariadb$" -f "status=running") ]]; then
-      echo_content skyBlue "---> MariaDB安装完成"
-      echo_content yellow "---> MariaDB root的数据库密码(请妥善保存): ${mariadb_pas}"
-      if [[ "${mariadb_user}" != "root" ]]; then
-        echo_content yellow "---> MariaDB ${mariadb_user}的数据库密码(请妥善保存): ${mariadb_pas}"
-      fi
-    else
-      echo_content red "---> MariaDB安装失败或运行异常,请尝试修复或卸载重装"
-      exit 0
-    fi
-  else
-    echo_content skyBlue "---> 你已经安装了MariaDB"
-  fi
+echo_content skyBlue "---> MariaDB installation complete"
+       echo_content yellow "---> MariaDB root database password (please keep it safe): ${mariadb_pas}"
+       if [[ "${mariadb_user}" != "root" ]]; then
+         echo_content yellow "---> MariaDB ${mariadb_user} database password (please keep it safe): ${mariadb_pas}"
+       the fi
+     else
+       echo_content red "---> MariaDB installation failed or running abnormally, please try to repair or uninstall and reinstall"
+       exit 0
+     the fi
+   else
+     echo_content skyBlue "---> You have installed MariaDB"
+   the fi
 }
 
-# 安装Redis
+# Install Redis
 install_redis() {
-  if [[ -z $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
-    echo_content green "---> 安装Redis"
+   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
+     echo_content green "---> Install Redis"
 
-    read -r -p "请输入Redis的端口(默认:6378): " redis_port
-    [[ -z "${redis_port}" ]] && redis_port=6378
-    while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-      if [[ -z "${redis_pass}" ]]; then
-        echo_content red "密码不能为空"
+     read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+     [[ -z "${redis_port}" ]] && redis_port=6378
+     while read -r -p "Please enter the Redis password (required): " redis_pass; do
+       if [[ -z "${redis_pass}" ]]; then
+         echo_content red "Password cannot be empty"
       else
         break
       fi
@@ -431,31 +431,31 @@ install_redis() {
         redis-server --requirepass "${redis_pass}" --port ${redis_port}
 
     if [[ -n $(docker ps -q -f "name=^trojan-panel-redis$" -f "status=running") ]]; then
-      echo_content skyBlue "---> Redis安装完成"
-      echo_content yellow "---> Redis的数据库密码(请妥善保存): ${redis_pass}"
-    else
-      echo_content red "---> Redis安装失败或运行异常,请尝试修复或卸载重装"
-      exit 0
-    fi
-  else
-    echo_content skyBlue "---> 你已经安装了Redis"
-  fi
+echo_content skyBlue "---> Redis installation complete"
+       echo_content yellow "---> Redis database password (please keep it safe): ${redis_pass}"
+     else
+       echo_content red "---> Redis installation failed or running abnormally, please try to repair or uninstall and reinstall"
+       exit 0
+     the fi
+   else
+     echo_content skyBlue "---> You have installed Redis"
+   the fi
 }
 
-# 安装TrojanPanel
+# Install TrojanPanel
 install_trojan_panel() {
-  if [[ -z $(docker ps -a -q -f "name=^trojan-panel$") ]]; then
-    echo_content green "---> 安装Trojan Panel"
+   if [[ -z $(docker ps -a -q -f "name=^trojan-panel$") ]]; then
+     echo_content green "---> Install Trojan Panel"
 
-    read -r -p "请输入数据库的IP地址(默认:本机数据库): " mariadb_ip
-    [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
-    read -r -p "请输入数据库的端口(默认:9507): " mariadb_port
-    [[ -z "${mariadb_port}" ]] && mariadb_port=9507
-    read -r -p "请输入数据库的用户名(默认:root): " mariadb_user
-    [[ -z "${mariadb_user}" ]] && mariadb_user="root"
-    while read -r -p "请输入数据库的密码(必填): " mariadb_pas; do
-      if [[ -z "${mariadb_pas}" ]]; then
-        echo_content red "密码不能为空"
+     read -r -p "Please enter the IP address of the database (default: local database): " mariadb_ip
+     [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
+     read -r -p "Please enter the port of the database (default: 9507): " mariadb_port
+     [[ -z "${mariadb_port}" ]] && mariadb_port=9507
+     read -r -p "Please enter the database user name (default: root): " mariadb_user
+     [[ -z "${mariadb_user}" ]] && mariadb_user="root"
+     while read -r -p "Please enter the database password (required): " mariadb_pas; do
+       if [[ -z "${mariadb_pas}" ]]; then
+         echo_content red "Password cannot be empty"
       else
         break
       fi
@@ -469,13 +469,13 @@ install_trojan_panel() {
         docker exec trojan-panel-mariadb mysql -h"${mariadb_ip}" -P"${mariadb_port}" -u"${mariadb_user}" -p"${mariadb_pas}" -e "create database trojan_panel_db;" &>/dev/null
     fi
 
-    read -r -p "请输入Redis的IP地址(默认:本机Redis): " redis_host
-    [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
-    read -r -p "请输入Redis的端口(默认:6378): " redis_port
-    [[ -z "${redis_port}" ]] && redis_port=6378
-    while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-      if [[ -z "${redis_pass}" ]]; then
-        echo_content red "密码不能为空"
+    read -r -p "Please enter the IP address of Redis (default: local Redis): " redis_host
+     [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
+     read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+     [[ -z "${redis_port}" ]] && redis_port=6378
+     while read -r -p "Please enter the Redis password (required): " redis_pass; do
+       if [[ -z "${redis_pass}" ]]; then
+         echo_content red "Password cannot be empty"
       else
         break
       fi
@@ -505,18 +505,18 @@ install_trojan_panel() {
     if [[ -n $(docker ps -q -f "name=^trojan-panel$" -f "status=running") ]]; then
       echo_content skyBlue "---> Trojan Panel后端安装完成"
     else
-      echo_content red "---> Trojan Panel后端安装失败或运行异常,请尝试修复或卸载重装"
-      exit 0
-    fi
-  else
-    echo_content skyBlue "---> 你已经安装了Trojan Panel后端"
-  fi
+echo_content red "---> Trojan Panel backend installation failed or running abnormally, please try to repair or uninstall and reinstall"
+       exit 0
+     the fi
+   else
+     echo_content skyBlue "---> You have installed the Trojan Panel backend"
+   the fi
 
-  if [[ -z $(docker ps -a -q -f "name=^trojan-panel-ui$") ]]; then
-    read -r -p "请输入Trojan Panel前端端口(默认:8888): " trojan_panel_ui_port
-    [[ -z "${trojan_panel_ui_port}" ]] && trojan_panel_ui_port="8888"
+   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-ui$") ]]; then
+     read -r -p "Please enter the Trojan Panel front-end port (default: 8888): " trojan_panel_ui_port
+     [[ -z "${trojan_panel_ui_port}" ]] && trojan_panel_ui_port="8888"
 
-    while read -r -p "请选择Trojan Panel前端是否开启https?(0/关闭 1/开启 默认:1/开启): " https_enable; do
+     while read -r -p "Please select whether to enable https on the Trojan Panel front end? (0/off 1/on Default: 1/on): " https_enable; do
       if [[ -z ${https_enable} || ${https_enable} == 1 ]]; then
         # 配置Nginx
         cat >${NGINX_CONFIG} <<-EOF
@@ -563,7 +563,7 @@ EOF
         break
       else
         if [[ ${https_enable} != 0 ]]; then
-          echo_content red "不可以输入除0和1之外的其他字符"
+          echo_content red "No characters other than 0 and 1 can be entered"
         else
           cat >${NGINX_CONFIG} <<-EOF
 server {
@@ -600,57 +600,57 @@ EOF
         jonssonyan/trojan-panel-ui
 
     if [[ -n $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
-      echo_content skyBlue "---> Trojan Panel前端安装完成"
-    else
-      echo_content red "---> Trojan Panel前端安装失败或运行异常,请尝试修复或卸载重装"
-      exit 0
-    fi
-  else
-    echo_content skyBlue "---> 你已经安装了Trojan Panel前端"
-  fi
+echo_content skyBlue "---> Trojan Panel front-end installation completed"
+     else
+       echo_content red "---> Trojan Panel front-end installation failed or running abnormally, please try to repair or uninstall and reinstall"
+       exit 0
+     the fi
+   else
+     echo_content skyBlue "---> You have installed the Trojan Panel frontend"
+   the fi
 
-  https_flag=$([[ -z ${https_enable} || ${https_enable} == 1 ]] && echo "https" || echo "http")
+   https_flag=$([[ -z ${https_enable} || ${https_enable} == 1 ]] && echo "https" || echo "http")
 
-  echo_content red "\n=============================================================="
-  echo_content skyBlue "Trojan Panel 安装成功"
-  echo_content yellow "MariaDB ${mariadb_user}的密码(请妥善保存): ${mariadb_pas}"
-  echo_content yellow "Redis的密码(请妥善保存): ${redis_pass}"
-  echo_content yellow "管理面板地址: ${https_flag}://${domain}:${trojan_panel_ui_port}"
-  echo_content yellow "系统管理员 默认用户名: sysadmin 默认密码: 123456 请及时登陆管理面板修改密码"
-  echo_content yellow "Trojan Panel私钥和证书目录: ${CADDY_ACME}${domain}/"
-  echo_content red "\n=============================================================="
+   echo_content red "\n=================================================== =================="
+   echo_content skyBlue "Trojan Panel installed successfully"
+   echo_content yellow "MariaDB ${mariadb_user} password (please keep it safe): ${mariadb_pas}"
+   echo_content yellow "Redis password (please keep it safe): ${redis_pass}"
+   echo_content yellow "Management panel address: ${https_flag}://${domain}:${trojan_panel_ui_port}"
+   echo_content yellow "System administrator default username: sysadmin default password: 123456 Please log in to the management panel to change the password in time"
+   echo_content yellow "Trojan Panel private key and certificate directory: ${CADDY_ACME}${domain}/"
+   echo_content red "\n=================================================== =================="
 }
 
 # 安装Trojan Panel Core
 install_trojan_panel_core() {
   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-core$") ]]; then
-    echo_content green "---> 安装Trojan Panel Core"
+echo_content green "---> Install Trojan Panel Core"
 
-    read -r -p "请输入数据库的IP地址(默认:本机数据库): " mariadb_ip
-    [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
-    read -r -p "请输入数据库的端口(默认:9507): " mariadb_port
-    [[ -z "${mariadb_port}" ]] && mariadb_port=9507
-    read -r -p "请输入数据库的用户名(默认:root): " mariadb_user
-    [[ -z "${mariadb_user}" ]] && mariadb_user="root"
-    while read -r -p "请输入数据库的密码(必填): " mariadb_pas; do
-      if [[ -z "${mariadb_pas}" ]]; then
-        echo_content red "密码不能为空"
-      else
-        break
-      fi
-    done
-    read -r -p "请输入数据库名称(默认:trojan_panel_db): " database
-    [[ -z "${database}" ]] && database="trojan_panel_db"
-    read -r -p "请输入数据库的用户表名称(默认:account): " account_table
-    [[ -z "${account_table}" ]] && account_table="account"
+     read -r -p "Please enter the IP address of the database (default: local database): " mariadb_ip
+     [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
+     read -r -p "Please enter the port of the database (default: 9507): " mariadb_port
+     [[ -z "${mariadb_port}" ]] && mariadb_port=9507
+     read -r -p "Please enter the database user name (default: root): " mariadb_user
+     [[ -z "${mariadb_user}" ]] && mariadb_user="root"
+     while read -r -p "Please enter the database password (required): " mariadb_pas; do
+       if [[ -z "${mariadb_pas}" ]]; then
+         echo_content red "Password cannot be empty"
+       else
+         break
+       the fi
+     done
+     read -r -p "Please enter the database name (default: trojan_panel_db): " database
+     [[ -z "${database}" ]] && database="trojan_panel_db"
+     read -r -p "Please enter the user table name of the database (default: account): " account_table
+     [[ -z "${account_table}" ]] && account_table="account"
 
-    read -r -p "请输入Redis的IP地址(默认:本机Redis): " redis_host
-    [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
-    read -r -p "请输入Redis的端口(默认:6378): " redis_port
-    [[ -z "${redis_port}" ]] && redis_port=6378
-    while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-      if [[ -z "${redis_pass}" ]]; then
-        echo_content red "密码不能为空"
+     read -r -p "Please enter the IP address of Redis (default: local Redis): " redis_host
+     [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
+     read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+     [[ -z "${redis_port}" ]] && redis_port=6378
+     while read -r -p "Please enter the Redis password (required): " redis_pass; do
+       if [[ -z "${redis_pass}" ]]; then
+         echo_content red "Password cannot be empty"
       else
         break
       fi
@@ -684,33 +684,33 @@ install_trojan_panel_core() {
     if [[ -n $(docker ps -q -f "name=^trojan-panel-core$" -f "status=running") ]]; then
       echo_content skyBlue "---> Trojan Panel Core安装完成"
     else
-      echo_content red "---> Trojan Panel Core后端安装失败或运行异常,请尝试修复或卸载重装"
-      exit 0
-    fi
-  else
-    echo_content skyBlue "---> 你已经安装了Trojan Panel Core"
-  fi
+echo_content red "---> Trojan Panel Core backend installation failed or running abnormally, please try to repair or uninstall and reinstall"
+       exit 0
+     the fi
+   else
+     echo_content skyBlue "---> You have installed Trojan Panel Core"
+   the fi
 }
 
-# 更新Trojan Panel
+#Update Trojan Panel
 update_trojan_panel() {
-  # 判断Trojan Panel是否安装
-  if [[ -z $(docker ps -a -q -f "name=^trojan-panel$") ]]; then
-    echo_content red "---> 请先安装Trojan Panel"
-    exit 0
-  fi
+   # Determine whether Trojan Panel is installed
+   if [[ -z $(docker ps -a -q -f "name=^trojan-panel$") ]]; then
+     echo_content red "---> Please install Trojan Panel first"
+     exit 0
+   the fi
 
-  echo_content green "---> 更新Trojan Panel"
+   echo_content green "---> Update Trojan Panel"
 
-  read -r -p "请输入数据库的IP地址(默认:本机数据库): " mariadb_ip
-  [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
-  read -r -p "请输入数据库的端口(默认:9507): " mariadb_port
-  [[ -z "${mariadb_port}" ]] && mariadb_port=9507
-  read -r -p "请输入数据库的用户名(默认:root): " mariadb_user
-  [[ -z "${mariadb_user}" ]] && mariadb_user="root"
-  while read -r -p "请输入数据库的密码(必填): " mariadb_pas; do
-    if [[ -z "${mariadb_pas}" ]]; then
-      echo_content red "密码不能为空"
+   read -r -p "Please enter the IP address of the database (default: local database): " mariadb_ip
+   [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
+   read -r -p "Please enter the port of the database (default: 9507): " mariadb_port
+   [[ -z "${mariadb_port}" ]] && mariadb_port=9507
+   read -r -p "Please enter the database user name (default: root): " mariadb_user
+   [[ -z "${mariadb_user}" ]] && mariadb_user="root"
+   while read -r -p "Please enter the database password (required): " mariadb_pas; do
+     if [[ -z "${mariadb_pas}" ]]; then
+       echo_content red "Password cannot be empty"
     else
       break
     fi
@@ -724,13 +724,13 @@ update_trojan_panel() {
     docker exec trojan-panel-mariadb mysql -h"${mariadb_ip}" -P"${mariadb_port}" -u"${mariadb_user}" -p"${mariadb_pas}" -e "create database trojan_panel_db;" &>/dev/null
   fi
 
-  read -r -p "请输入Redis的IP地址(默认:本机Redis): " redis_host
-  [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
-  read -r -p "请输入Redis的端口(默认:6378): " redis_port
-  [[ -z "${redis_port}" ]] && redis_port=6378
-  while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-    if [[ -z "${redis_pass}" ]]; then
-      echo_content red "密码不能为空"
+read -r -p "Please enter the IP address of Redis (default: local Redis): " redis_host
+   [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
+   read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+   [[ -z "${redis_port}" ]] && redis_port=6378
+   while read -r -p "Please enter the Redis password (required): " redis_pass; do
+     if [[ -z "${redis_pass}" ]]; then
+       echo_content red "Password cannot be empty"
     else
       break
     fi
@@ -766,22 +766,22 @@ update_trojan_panel() {
       jonssonyan/trojan-panel
 
   if [[ -n $(docker ps -q -f "name=^trojan-panel$" -f "status=running") ]]; then
-    echo_content skyBlue "---> Trojan Panel后端更新完成"
-  else
-    echo_content red "---> Trojan Panel后端更新失败或运行异常,请尝试修复或卸载重装"
-  fi
+echo_content skyBlue "---> Trojan Panel backend update completed"
+   else
+     echo_content red "---> Trojan Panel backend update failed or running abnormally, please try to repair or uninstall and reinstall"
+   the fi
 
-  docker pull jonssonyan/trojan-panel-ui &&
-    docker run -d --name trojan-panel-ui --restart always \
-      --network=host \
-      -v ${NGINX_CONFIG}:/etc/nginx/conf.d/default.conf \
-      -v ${CADDY_ACME}"${domain}":${CADDY_ACME}"${domain}" \
-      jonssonyan/trojan-panel-ui
+   docker pull jonssonyan/trojan-panel-ui &&
+     docker run -d --name trojan-panel-ui --restart always\
+       --network=host \
+       -v ${NGINX_CONFIG}:/etc/nginx/conf.d/default.conf \
+       -v ${CADDY_ACME}"${domain}":${CADDY_ACME}"${domain}" \
+       jonssonyan/trojan-panel-ui
 
-  if [[ -n $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
-    echo_content skyBlue "---> Trojan Panel前端更新完成"
-  else
-    echo_content red "---> Trojan Panel前端更新失败或运行异常,请尝试修复或卸载重装"
+   if [[ -n $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
+     echo_content skyBlue "---> Trojan Panel front-end update completed"
+   else
+     echo_content red "---> Trojan Panel front-end update failed or running abnormally, please try to repair or uninstall and reinstall"
   fi
 }
 
@@ -789,37 +789,37 @@ update_trojan_panel() {
 update_trojan_panel_core() {
   # 判断Trojan Panel Core是否安装
   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-core$") ]]; then
-    echo_content red "---> 请先安装Trojan Panel Core"
-    exit 0
-  fi
+echo_content red "---> Please install Trojan Panel Core first"
+     exit 0
+   the fi
 
-  echo_content green "---> 更新Trojan Panel Core"
+   echo_content green "---> Update Trojan Panel Core"
 
-  read -r -p "请输入数据库的IP地址(默认:本机数据库): " mariadb_ip
-  [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
-  read -r -p "请输入数据库的端口(默认:9507): " mariadb_port
-  [[ -z "${mariadb_port}" ]] && mariadb_port=9507
-  read -r -p "请输入数据库的用户名(默认:root): " mariadb_user
-  [[ -z "${mariadb_user}" ]] && mariadb_user="root"
-  while read -r -p "请输入数据库的密码(必填): " mariadb_pas; do
-    if [[ -z "${mariadb_pas}" ]]; then
-      echo_content red "密码不能为空"
-    else
-      break
-    fi
-  done
-  read -r -p "请输入数据库名称(默认:trojan_panel_db): " database
-  [[ -z "${database}" ]] && database="trojan_panel_db"
-  read -r -p "请输入数据库的用户表名称(默认:account): " account_table
-  [[ -z "${account_table}" ]] && account_table="account"
+   read -r -p "Please enter the IP address of the database (default: local database): " mariadb_ip
+   [[ -z "${mariadb_ip}" ]] && mariadb_ip="127.0.0.1"
+   read -r -p "Please enter the port of the database (default: 9507): " mariadb_port
+   [[ -z "${mariadb_port}" ]] && mariadb_port=9507
+   read -r -p "Please enter the database user name (default: root): " mariadb_user
+   [[ -z "${mariadb_user}" ]] && mariadb_user="root"
+   while read -r -p "Please enter the database password (required): " mariadb_pas; do
+     if [[ -z "${mariadb_pas}" ]]; then
+       echo_content red "Password cannot be empty"
+     else
+       break
+     the fi
+   done
+   read -r -p "Please enter the database name (default: trojan_panel_db): " database
+   [[ -z "${database}" ]] && database="trojan_panel_db"
+   read -r -p "Please enter the user table name of the database (default: account): " account_table
+   [[ -z "${account_table}" ]] && account_table="account"
 
-  read -r -p "请输入Redis的IP地址(默认:本机Redis): " redis_host
-  [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
-  read -r -p "请输入Redis的端口(默认:6378): " redis_port
-  [[ -z "${redis_port}" ]] && redis_port=6378
-  while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-    if [[ -z "${redis_pass}" ]]; then
-      echo_content red "密码不能为空"
+   read -r -p "Please enter the IP address of Redis (default: local Redis): " redis_host
+   [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
+   read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+   [[ -z "${redis_port}" ]] && redis_port=6378
+   while read -r -p "Please enter the Redis password (required): " redis_pass; do
+     if [[ -z "${redis_pass}" ]]; then
+       echo_content red "Password cannot be empty"
     else
       break
     fi
@@ -848,54 +848,54 @@ update_trojan_panel_core() {
       jonssonyan/trojan-panel-core
 
   if [[ "$?" == "0" ]]; then
-    echo_content skyBlue "---> Trojan Panel Core更新完成"
-  else
-    echo_content red "---> Trojan Panel Core更新失败"
-  fi
+echo_content skyBlue "---> Trojan Panel Core updated"
+   else
+     echo_content red "---> Trojan Panel Core update failed"
+   the fi
 }
 
-# 卸载Caddy TLS
+# Uninstall Caddy TLS
 uninstall_caddy_tls() {
-  # 判断Caddy TLS是否安装
-  if [[ -n $(docker ps -a -q -f "name=^trojan-panel-caddy$") ]]; then
-    echo_content green "---> 卸载Caddy TLS"
+   # Determine whether Caddy TLS is installed
+   if [[ -n $(docker ps -a -q -f "name=^trojan-panel-caddy$") ]]; then
+     echo_content green "---> Uninstall Caddy TLS"
 
-    docker rm -f trojan-panel-caddy &&
-      rm -rf ${CADDY_DATA}
+     docker rm -f trojan-panel-caddy &&
+       rm -rf ${CADDY_DATA}
 
-    echo_content skyBlue "---> Caddy TLS卸载完成"
-  else
-    echo_content red "---> 请先安装Caddy TLS"
-  fi
+     echo_content skyBlue "---> Caddy TLS offload complete"
+   else
+     echo_content red "---> Please install Caddy TLS first"
+   the fi
 }
 
-# 卸载MariaDB
+# Uninstall MariaDB
 uninstall_mariadb() {
-  # 判断MariaDB是否安装
-  if [[ -n $(docker ps -a -q -f "name=^trojan-panel-mariadb$") ]]; then
-    echo_content green "---> 卸载MariaDB"
+   # Determine whether MariaDB is installed
+   if [[ -n $(docker ps -a -q -f "name=^trojan-panel-mariadb$") ]]; then
+     echo_content green "---> Uninstall MariaDB"
 
     docker rm -f trojan-panel-mariadb &&
       rm -rf ${MARIA_DATA}
 
-    echo_content skyBlue "---> MariaDB卸载完成"
-  else
-    echo_content red "---> 请先安装MariaDB"
-  fi
+echo_content skyBlue "---> MariaDB uninstall complete"
+   else
+     echo_content red "---> Please install MariaDB first"
+   the fi
 }
 
-# 卸载Redis
+# Uninstall Redis
 uninstall_redis() {
-  # 判断Redis是否安装
-  if [[ -n $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
-    echo_content green "---> 卸载Redis"
+   # Determine whether Redis is installed
+   if [[ -n $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
+     echo_content green "---> uninstall Redis"
 
-    docker rm -f trojan-panel-redis &&
-      rm -rf ${REDIS_DATA}
+     docker rm -f trojan-panel-redis &&
+       rm -rf ${REDIS_DATA}
 
-    echo_content skyBlue "---> Redis卸载完成"
-  else
-    echo_content red "---> 请先安装Redis"
+     echo_content skyBlue "---> Redis uninstall completed"
+   else
+     echo_content red "---> Please install Redis first"
   fi
 }
 
@@ -903,20 +903,20 @@ uninstall_redis() {
 uninstall_trojan_panel() {
   # 判断Trojan Panel是否安装
   if [[ -n $(docker ps -a -q -f "name=^trojan-panel$") ]]; then
-    echo_content green "---> 卸载Trojan Panel"
+echo_content green "---> Uninstall Trojan Panel"
 
-    docker rm -f trojan-panel &&
-      docker rmi -f jonssonyan/trojan-panel &&
-      rm -rf ${TROJAN_PANEL_DATA}
+     docker rm -f trojan-panel &&
+       docker rmi -f jonssonyan/trojan-panel &&
+       rm -rf ${TROJAN_PANEL_DATA}
 
-    docker rm -f trojan-panel-ui &&
-      docker rmi -f jonssonyan/trojan-panel-ui &&
-      rm -rf ${TROJAN_PANEL_UI_DATA} &&
-      rm -rf ${NGINX_DATA}
+     docker rm -f trojan-panel-ui &&
+       docker rmi -f jonssonyan/trojan-panel-ui &&
+       rm -rf ${TROJAN_PANEL_UI_DATA} &&
+       rm -rf ${NGINX_DATA}
 
-    echo_content skyBlue "---> Trojan Panel卸载完成"
-  else
-    echo_content red "---> 请先安装Trojan Panel"
+     echo_content skyBlue "---> Trojan Panel uninstall complete"
+   else
+     echo_content red "---> Please install Trojan Panel first"
   fi
 }
 
@@ -924,75 +924,75 @@ uninstall_trojan_panel() {
 uninstall_trojan_panel_core() {
   # 判断Trojan Panel Core是否安装
   if [[ -n $(docker ps -a -q -f "name=^trojan-panel-core$") ]]; then
-    echo_content green "---> 卸载Trojan Panel Core"
+echo_content green "---> Uninstall Trojan Panel Core"
 
-    docker rm -f trojan-panel-core &&
-      docker rmi -f jonssonyan/trojan-panel-core &&
-      rm -rf ${TROJAN_PANEL_CORE_DATA}
+     docker rm -f trojan-panel-core &&
+       docker rmi -f jonssonyan/trojan-panel-core &&
+       rm -rf ${TROJAN_PANEL_CORE_DATA}
 
-    echo_content skyBlue "---> Trojan Panel Core卸载完成"
-  else
-    echo_content red "---> 请先安装Trojan Panel Core"
-  fi
+     echo_content skyBlue "---> Trojan Panel Core uninstall complete"
+   else
+     echo_content red "---> Please install Trojan Panel Core first"
+   the fi
 }
 
-# 卸载全部Trojan Panel相关的容器
+# Uninstall all Trojan Panel related containers
 uninstall_all() {
-  echo_content green "---> 卸载全部Trojan Panel相关的容器"
+   echo_content green "---> uninstall all Trojan Panel related containers"
 
-  docker rm -f $(docker ps -a -q -f "name=^trojan-panel") &&
-    docker rmi -f $(docker images | grep "^jonssonyan/trojan-panel" | awk '{print $3}') &&
-    rm -rf ${TP_DATA}
+   docker rm -f $(docker ps -a -q -f "name=^trojan-panel") &&
+     docker rmi -f $(docker images | grep "^jonssonyan/trojan-panel" | awk '{print $3}') &&
+     rm -rf ${TP_DATA}
 
-  echo_content skyBlue "---> 卸载全部Trojan Panel相关的容器完成"
+   echo_content skyBlue "---> Uninstall all Trojan Panel related containers completed"
 }
 
-# 修改Trojan Panel前端端口
+# Modify the Trojan Panel front-end port
 update_trojan_panel_ui_port() {
-  if [[ -n $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
-    echo_content green "---> 修改Trojan Panel前端端口"
+   if [[ -n $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
+     echo_content green "---> Modify Trojan Panel front-end port"
 
-    trojan_panel_ui_port=$(grep 'listen.*ssl' ${NGINX_CONFIG} | awk '{print $2}')
-    echo_content yellow "提示：Trojan Panel前端当前端口为 ${trojan_panel_ui_port}"
+     trojan_panel_ui_port=$(grep 'listen.*ssl' ${NGINX_CONFIG} | awk '{print $2}')
+     echo_content yellow "Hint: The current port of the Trojan Panel front end is ${trojan_panel_ui_port}"
 
-    read -r -p "请输入Trojan Panel前端新端口(默认:8888): " trojan_panel_ui_port
-    [[ -z "${trojan_panel_ui_port}" ]] && trojan_panel_ui_port="8888"
-    sed -i "s/listen.*ssl;/listen       ${trojan_panel_ui_port} ssl;/g" ${NGINX_CONFIG} &&
-      sed -i "s/https:\/\/\$host:.*\$uri?\$args/https:\/\/\$host:${trojan_panel_ui_port}\$uri?\$args/g" ${NGINX_CONFIG} &&
-      docker restart trojan-panel-ui
+     read -r -p "Please enter the new port of the Trojan Panel front end (default: 8888): " trojan_panel_ui_port
+     [[ -z "${trojan_panel_ui_port}" ]] && trojan_panel_ui_port="8888"
+     sed -i "s/listen.*ssl;/listen ${trojan_panel_ui_port} ssl;/g" ${NGINX_CONFIG} &&
+       sed -i "s/https:\/\/\$host:.*\$uri?\$args/https:\/\/\$host:${trojan_panel_ui_port}\$uri?\$args/g" ${NGINX_CONFIG} &&
+       docker restart trojan-panel-ui
 
-    if [[ "$?" == "0" ]]; then
-      echo_content skyBlue "---> Trojan Panel前端端口修改完成"
-    else
-      echo_content red "---> Trojan Panel前端端口修改失败"
-    fi
-  else
-    echo_content red "---> Trojan Panel前端未安装或运行异常,请修复或卸载重装后重试"
+     if [[ "$?" == "0" ]]; then
+       echo_content skyBlue "---> Trojan Panel front-end port modification completed"
+     else
+       echo_content red "---> Trojan Panel front-end port modification failed"
+     the fi
+   else
+     echo_content red "---> Trojan Panel is not installed or running abnormally, please repair or uninstall and reinstall and try again"
   fi
 }
 
 # 刷新Redis缓存
 redis_flush_all() {
-  # 判断Redis是否安装
-  if [[ -z $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
-    echo_content red "---> 请先安装Redis"
-    exit 0
-  fi
+# Determine whether Redis is installed
+   if [[ -z $(docker ps -a -q -f "name=^trojan-panel-redis$") ]]; then
+     echo_content red "---> Please install Redis first"
+     exit 0
+   the fi
 
-  if [[ -z $(docker ps -q -f "name=^trojan-panel-redis$" -f "status=running") ]]; then
-    echo_content red "---> Redis运行异常"
-    exit 0
-  fi
+   if [[ -z $(docker ps -q -f "name=^trojan-panel-redis$" -f "status=running") ]]; then
+     echo_content red "---> Redis running abnormally"
+     exit 0
+   the fi
 
-  echo_content green "---> 刷新Redis缓存"
+   echo_content green "---> refresh Redis cache"
 
-  read -r -p "请输入Redis的IP地址(默认:本机Redis): " redis_host
-  [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
-  read -r -p "请输入Redis的端口(默认:6378): " redis_port
-  [[ -z "${redis_port}" ]] && redis_port=6378
-  while read -r -p "请输入Redis的密码(必填): " redis_pass; do
-    if [[ -z "${redis_pass}" ]]; then
-      echo_content red "密码不能为空"
+   read -r -p "Please enter the IP address of Redis (default: local Redis): " redis_host
+   [[ -z "${redis_host}" ]] && redis_host="127.0.0.1"
+   read -r -p "Please enter the port of Redis (default: 6378): " redis_port
+   [[ -z "${redis_port}" ]] && redis_port=6378
+   while read -r -p "Please enter the Redis password (required): " redis_pass; do
+     if [[ -z "${redis_pass}" ]]; then
+       echo_content red "Password cannot be empty"
     else
       break
     fi
@@ -1011,43 +1011,43 @@ redis_flush_all() {
 failure_testing() {
   echo_content green "---> 故障检测开始"
   if [[ ! $(docker -v 2>/dev/null) ]]; then
-    echo_content red "---> Docker运行异常"
-  else
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel-caddy$") ]]; then
-      if [[ -z $(docker ps -q -f "name=^trojan-panel-caddy$" -f "status=running") ]]; then
-        echo_content red "---> Caddy TLS运行异常"
-      fi
-      domain=$(cat "${DOMAIN_FILE}")
-      if [[ -z $(cat "${DOMAIN_FILE}") || ! -d "${CADDY_ACME}${domain}" || ! -f "${CADDY_ACME}${domain}/${domain}.crt" ]]; then
-        echo_content red "---> 证书申请异常，请尝试重启服务器将重新申请证书或者重新搭建选择自定义证书选项"
-      fi
-    fi
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel-mariadb$") && -z $(docker ps -q -f "name=^trojan-panel-mariadb$" -f "status=running") ]]; then
-      echo_content red "---> MariaDB运行异常"
-    fi
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel-redis$") && -z $(docker ps -q -f "name=^trojan-panel-redis$" -f "status=running") ]]; then
-      echo_content red "---> Redis运行异常"
-    fi
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel$") && -z $(docker ps -q -f "name=^trojan-panel$" -f "status=running") ]]; then
-      echo_content red "---> Trojan Panel后端运行异常"
-    fi
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel-ui$") && -z $(docker ps -q -f "name=^trojan-panel-ui$" -f "status=running") ]]; then
-      echo_content red "---> Trojan Panel前端运行异常"
-    fi
-    if [[ -n $(docker ps -a -q -f "name=^trojan-panel-core$") && -z $(docker ps -q -f "name=^trojan-panel-core$" -f "status=running") ]]; then
-      echo_content red "---> Trojan Panel Core运行异常"
-    fi
-  fi
-  echo_content green "---> 故障检测结束"
+echo_content red "---> Docker running abnormally"
+   else
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel-caddy$") ]]; then
+       if [[ -z $(docker ps -q -f "name=^trojan-panel-caddy$" -f "status=running") ]]; then
+         echo_content red "---> Caddy TLS running abnormally"
+       the fi
+       domain=$(cat "${DOMAIN_FILE}")
+       if [[ -z $(cat "${DOMAIN_FILE}") || ! -d "${CADDY_ACME}${domain}" || ! -f "${CADDY_ACME}${domain}/${domain}. crt" ]]; then
+         echo_content red "---> The certificate application is abnormal, please try to restart the server to re-apply for the certificate or rebuild and select the custom certificate option"
+       the fi
+     the fi
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel-mariadb$") && -z $(docker ps -q -f "name=^trojan-panel-mariadb$" - f "status=running") ]]; then
+       echo_content red "---> MariaDB is running abnormally"
+     the fi
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel-redis$") && -z $(docker ps -q -f "name=^trojan-panel-redis$" - f "status=running") ]]; then
+       echo_content red "---> Redis running abnormally"
+     the fi
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel$") && -z $(docker ps -q -f "name=^trojan-panel$" -f "status= running") ]]; then
+       echo_content red "---> Trojan Panel backend running abnormally"
+     the fi
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel-ui$") && -z $(docker ps -q -f "name=^trojan-panel-ui$" - f "status=running") ]]; then
+       echo_content red "---> Trojan Panel front end running abnormally"
+     the fi
+     if [[ -n $(docker ps -a -q -f "name=^trojan-panel-core$") && -z $(docker ps -q -f "name=^trojan-panel-core$" - f "status=running") ]]; then
+       echo_content red "---> Trojan Panel Core running abnormally"
+     the fi
+   the fi
+   echo_content green "---> failure detection ended"
 }
 
 log_query() {
   while :; do
-    echo_content skyBlue "可以查询日志的应用如下:"
-    echo_content yellow "1. Trojan Panel"
-    echo_content yellow "2. Trojan Panel Core"
-    echo_content yellow "3. 退出"
-    read -r -p "请选择应用(默认:1): " select_log_query_type
+   echo_content skyBlue "The applications that can query logs are as follows:"
+     echo_content yellow "1. Trojan Panel"
+     echo_content yellow "2. Trojan Panel Core"
+     echo_content yellow "3. Exit"
+     read -r -p "Please select application (default: 1): " select_log_query_type
     [[ -z "${select_log_query_type}" ]] && select_log_query_type=1
 
     case ${select_log_query_type} in
@@ -1061,19 +1061,19 @@ log_query() {
       break
       ;;
     *)
-      echo_content red "没有这个选项"
-      continue
-      ;;
-    esac
+      echo_content red "No such option"
+       continue
+       ;;
+     esac
 
-    read -r -p "请输入查询的行数(默认:20): " select_log_query_line_type
-    [[ -z "${select_log_query_line_type}" ]] && select_log_query_line_type=20
+     read -r -p "Please enter the number of lines to query (default: 20): " select_log_query_line_type
+     [[ -z "${select_log_query_line_type}" ]] && select_log_query_line_type=20
 
-    if [[ -f ${log_file_path} ]]; then
-      echo_content skyBlue "日志文件如下:"
-      tail -n ${select_log_query_line_type} ${log_file_path}
-    else
-      echo_content red "不存在日志文件"
+     if [[ -f ${log_file_path} ]]; then
+       echo_content skyBlue "The log file is as follows:"
+       tail -n ${select_log_query_line_type} ${log_file_path}
+     else
+       echo_content red "No log file exists"
     fi
   done
 }
