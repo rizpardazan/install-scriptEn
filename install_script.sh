@@ -261,7 +261,8 @@ install_caddy_tls() {
 
         echo_content yellow "Detecting domain name, please wait..."
         ping_ip=$(ping "${domain}" -s1 -c1 | grep "ttl=" | head -n1 | cut -d"(" -f2 | cut -d")" -f1)
-        curl_ip=$(curl ifconfig.me)
+        #curl_ip=$(curl ifconfig.me)
+       curl_ip=ping_ip
         if [[ "${ping_ip}" != "${curl_ip}" ]]; then
           echo_content yellow "Your domain name is not resolved to the local IP, please try again later"
           echo_content red "---> Caddy installation failed"
